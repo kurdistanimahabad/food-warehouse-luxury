@@ -237,7 +237,8 @@ class WarehouseViewModel(application: Application) : AndroidViewModel(applicatio
             MovementType.OUTBOUND, MovementType.WASTE -> (item.quantity - qtyDelta).coerceAtLeast(0.0)
         }
         val unitPrice = if (type == MovementType.OUTBOUND) item.salePrice else item.purchasePrice
-        val amount = (qtyDelta * unitPrice).toLong()
+        val cartonFactor = if (item.unit.trim() == "کارتن") item.unitsPerCarton.coerceAtLeast(1).toLong() else 1L
+        val amount = (qtyDelta * unitPrice * cartonFactor).toLong()
 
         dao.updateItem(item.copy(quantity = newQty, updatedAtMillis = System.currentTimeMillis()))
         dao.insertMovement(
