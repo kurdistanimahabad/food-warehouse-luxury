@@ -1,5 +1,6 @@
 package com.luxury.foodwarehouse.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.rounded.Inventory2
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.luxury.foodwarehouse.data.CategoryEntity
 import com.luxury.foodwarehouse.data.FoodItemEntity
 import com.luxury.foodwarehouse.model.ExpiryStatus
 import com.luxury.foodwarehouse.model.Formatters
@@ -42,11 +45,14 @@ import com.luxury.foodwarehouse.ui.theme.EmeraldHealthy
 import com.luxury.foodwarehouse.ui.theme.SoftGold
 import com.luxury.foodwarehouse.ui.theme.TextPrimaryLuxury
 import com.luxury.foodwarehouse.ui.theme.TextSecondaryLuxury
+import com.luxury.foodwarehouse.viewmodel.InventoryFilter
 
 @Composable
 fun DashboardScreen(
     summary: WarehouseSummary,
     items: List<FoodItemEntity>,
+    categories: List<CategoryEntity>,
+    onSelectFilterAndOpenInventory: (InventoryFilter) -> Unit,
     onExportCsv: () -> Unit,
     onShareSummary: () -> Unit,
     onExportBackup: () -> Unit,
@@ -79,7 +85,7 @@ fun DashboardScreen(
                     onClick = onExportCsv,
                     modifier = Modifier.weight(1f)
                 ) {
-                    androidx.compose.material3.Icon(
+                    Icon(
                         imageVector = Icons.Rounded.FileDownload,
                         contentDescription = null,
                         tint = ChampagneGold
@@ -90,7 +96,7 @@ fun DashboardScreen(
                     onClick = onShareSummary,
                     modifier = Modifier.weight(1f)
                 ) {
-                    androidx.compose.material3.Icon(
+                    Icon(
                         imageVector = Icons.Rounded.Share,
                         contentDescription = null,
                         tint = ChampagneGold
@@ -101,7 +107,7 @@ fun DashboardScreen(
                     onClick = onExportBackup,
                     modifier = Modifier.weight(1f)
                 ) {
-                    androidx.compose.material3.Icon(
+                    Icon(
                         imageVector = Icons.Rounded.Backup,
                         contentDescription = null,
                         tint = ChampagneGold
@@ -121,14 +127,18 @@ fun DashboardScreen(
                     value = "${summary.totalSkuCount} قلم",
                     icon = Icons.Rounded.Inventory2,
                     accentColor = ChampagneGold,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { onSelectFilterAndOpenInventory(InventoryFilter.ALL) }
                 )
                 MetricStatCard(
                     title = "نزدیک انقضا",
                     value = "${summary.expiringSoonCount} قلم",
                     icon = Icons.Rounded.Schedule,
                     accentColor = AmberWarning,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { onSelectFilterAndOpenInventory(InventoryFilter.EXPIRING_SOON) }
                 )
             }
         }
@@ -143,20 +153,24 @@ fun DashboardScreen(
                     value = "${summary.expiredCount} قلم",
                     icon = Icons.Rounded.ErrorOutline,
                     accentColor = CrimsonDanger,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { onSelectFilterAndOpenInventory(InventoryFilter.EXPIRED) }
                 )
                 MetricStatCard(
                     title = "کم‌موجود",
                     value = "${summary.lowStockCount} قلم",
                     icon = Icons.Rounded.WarningAmber,
                     accentColor = EmeraldHealthy,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { onSelectFilterAndOpenInventory(InventoryFilter.LOW_STOCK) }
                 )
             }
         }
 
         item {
-            CategoryValueDonutChart(items = items)
+            CategoryValueDonutChart(items = items, categories = categories)
         }
 
         item {
