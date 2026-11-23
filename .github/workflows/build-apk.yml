@@ -23,6 +23,21 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Generate and Save Permanent Keystore (Only Once)
+        run: |
+          if [ ! -f "app/warehouse-key.jks" ]; then
+            keytool -genkey -v -keystore app/warehouse-key.jks \
+              -storepass LuxuryPassword123 -keypass LuxuryPassword123 \
+              -alias warehouse_alias -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=FoodWarehouse, OU=Dev, O=Luxury, L=Tehran, S=Tehran, C=IR"
+            
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add app/warehouse-key.jks
+            git commit -m "Add permanent signing keystore"
+            git push
+          fi
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
@@ -33,7 +48,7 @@ jobs:
           fi
           chmod +x ./gradlew
 
-      - name: Build Debug APK
+      - name: Build Signed APK
         run: ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK Artifact
