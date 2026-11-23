@@ -3,6 +3,7 @@ package com.luxury.foodwarehouse.export
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
+import com.luxury.foodwarehouse.data.CategoryEntity
 import com.luxury.foodwarehouse.data.FoodItemEntity
 import com.luxury.foodwarehouse.data.StockMovementEntity
 import com.luxury.foodwarehouse.model.Formatters
@@ -16,7 +17,8 @@ import java.util.Locale
 
 class WarehouseReportExporter(private val context: Context) {
 
-    fun exportCsvAndShare(items: List<FoodItemEntity>): File {
+    fun exportCsvAndShare(items: List<FoodItemEntity>, categories: List<CategoryEntity> = emptyList()): File {
+        val categoryMap = categories.associateBy { it.id }
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.US).format(Date())
         val outDir = File(context.getExternalFilesDir(null), "reports").apply { mkdirs() }
         val csvFile = File(outDir, "inventory_report_$timestamp.csv")
@@ -34,17 +36,18 @@ class WarehouseReportExporter(private val context: Context) {
             "قیمت فروش",
             "ارزش کل خرید",
             "ارزش کل فروش",
-            "تاریخ تولید",
-            "تاریخ انقضا",
+            "تاریخ تولید (شمسی)",
+            "تاریخ انقضا (شمسی)",
             "وضعیت انقضا"
         ).joinToString(",") { escapeCsv(it) }
 
         val rows = items.map { item ->
             val status = Formatters.getExpiryStatus(item.expiryDateMillis).labelFa
+            val catName = categoryMap[item.categoryId]?.name ?: "سایر اقلام"
             listOf(
                 item.id.toString(),
                 item.name,
-                item.category.titleFa,
+                catName,
                 item.barcode,
                 item.batchNumber,
                 item.storageLocation,
@@ -98,7 +101,7 @@ class WarehouseReportExporter(private val context: Context) {
                     put("name", item.name)
                     put("barcode", item.barcode)
                     put("batchNumber", item.batchNumber)
-                    put("category", item.category.name)
+                    put("categoryId", item.categoryId)
                     put("unit", item.unit)
                     put("quantity", item.quantity)
                     put("minStockAlert", item.minStockAlert)
