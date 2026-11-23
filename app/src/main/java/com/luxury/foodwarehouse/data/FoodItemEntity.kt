@@ -12,6 +12,7 @@ data class FoodItemEntity(
     val batchNumber: String = "",
     val categoryId: Long = 1L,
     val unit: String = "کارتن",
+    val unitsPerCarton: Int = 1,
     val quantity: Double,
     val minStockAlert: Double = 5.0,
     val purchasePrice: Long,
@@ -22,11 +23,20 @@ data class FoodItemEntity(
     val supplierName: String = "",
     val updatedAtMillis: Long = System.currentTimeMillis()
 ) {
+    private val effectiveCartonMultiplier: Long
+        get() = if (unit.trim() == "کارتن") unitsPerCarton.coerceAtLeast(1).toLong() else 1L
+
+    val cartonPurchasePrice: Long
+        get() = purchasePrice * unitsPerCarton.coerceAtLeast(1)
+
+    val cartonSalePrice: Long
+        get() = salePrice * unitsPerCarton.coerceAtLeast(1)
+
     val totalPurchaseValue: Long
-        get() = (quantity * purchasePrice).toLong()
+        get() = (quantity * purchasePrice * effectiveCartonMultiplier).toLong()
 
     val totalSaleValue: Long
-        get() = (quantity * salePrice).toLong()
+        get() = (quantity * salePrice * effectiveCartonMultiplier).toLong()
 
     val isLowStock: Boolean
         get() = quantity <= minStockAlert
