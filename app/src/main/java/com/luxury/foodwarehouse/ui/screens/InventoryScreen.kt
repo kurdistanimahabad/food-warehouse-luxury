@@ -14,8 +14,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.PlaylistAddCheck
 import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Search
@@ -23,6 +25,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,9 +38,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.luxury.foodwarehouse.data.CategoryEntity
 import com.luxury.foodwarehouse.data.FoodItemEntity
 import com.luxury.foodwarehouse.model.ExpiryStatus
-import com.luxury.foodwarehouse.model.FoodCategory
 import com.luxury.foodwarehouse.model.Formatters
 import com.luxury.foodwarehouse.model.MovementType
 import com.luxury.foodwarehouse.ui.components.BarcodeScannerDialog
@@ -55,18 +58,22 @@ import com.luxury.foodwarehouse.viewmodel.InventoryFilter
 @Composable
 fun InventoryScreen(
     items: List<FoodItemEntity>,
-    selectedCategory: FoodCategory?,
+    categories: List<CategoryEntity>,
+    selectedCategoryId: Long?,
     selectedFilter: InventoryFilter,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
-    onCategorySelect: (FoodCategory?) -> Unit,
+    onCategorySelect: (Long?) -> Unit,
     onFilterSelect: (InventoryFilter) -> Unit,
+    onOpenCategoryManager: () -> Unit,
+    onOpenBulkMovement: () -> Unit,
     onEditItem: (FoodItemEntity) -> Unit,
     onDeleteItem: (FoodItemEntity) -> Unit,
     onAdjustStock: (FoodItemEntity, MovementType, Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showSearchScanner by remember { mutableStateOf(false) }
+    val categoryNameById = remember(categories) { categories.associate { it.id to it.name } }
 
     if (showSearchScanner) {
         BarcodeScannerDialog(
@@ -97,21 +104,43 @@ fun InventoryScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(
+                onClick = onOpenCategoryManager,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(Icons.Rounded.Category, contentDescription = null, tint = ChampagneGold)
+                Text(" دسته‌بندی‌ها", color = SoftGold, fontSize = 12.sp, maxLines = 1)
+            }
+            OutlinedButton(
+                onClick = onOpenBulkMovement,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(Icons.Rounded.PlaylistAddCheck, contentDescription = null, tint = EmeraldHealthy)
+                Text(" ورود/خروج گروهی", color = TextPrimaryLuxury, fontSize = 12.sp, maxLines = 1)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             item {
                 LuxuryFilterChip(
-                    selected = selectedCategory == null,
+                    selected = selectedCategoryId == null,
                     label = "همه دسته‌ها",
                     onClick = { onCategorySelect(null) }
                 )
             }
-            items(FoodCategory.entries) { cat ->
+            items(categories, key = { it.id }) { cat ->
                 LuxuryFilterChip(
-                    selected = selectedCategory == cat,
-                    label = cat.titleFa,
-                    onClick = { onCategorySelect(cat) }
+                    selected = selectedCategoryId == cat.id,
+                    label = cat.name,
+                    onClick = { onCategorySelect(cat.id) }
                 )
             }
         }
@@ -148,6 +177,7 @@ fun InventoryScreen(
                     ExpiryStatus.EXPIRING_SOON -> AmberWarning
                     ExpiryStatus.EXPIRED -> CrimsonDanger
                 }
+                val catTitle = categoryNameById[item.categoryId] ?: "سایر اقلام"
 
                 LuxuryCard(
                     modifier = Modifier.fillMaxWidth(),
@@ -167,7 +197,7 @@ fun InventoryScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "${item.category.titleFa} • ${item.storageLocation}",
+                                    text = "$catTitle • ${item.storageLocation}",
                                     color = TextSecondaryLuxury,
                                     fontSize = 12.sp
                                 )
