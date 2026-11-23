@@ -1,19 +1,8 @@
 package com.luxury.foodwarehouse.model
 
 import java.text.NumberFormat
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
-
-enum class FoodCategory(val titleFa: String) {
-    DAIRY("لبنیات و سردخانه"),
-    DRY_GOODS("خشکبار و حبوبات"),
-    BEVERAGES("نوشیدنی"),
-    CANNED_OIL("کنسرو و روغن"),
-    PROTEIN("پروتئینی"),
-    OTHER("سایر اقلام")
-}
 
 enum class ExpiryStatus(val labelFa: String) {
     EXPIRED("منقضی‌شده"),
@@ -55,14 +44,13 @@ object Formatters {
         return "${numberFormat.format(amount)} $unitLabel"
     }
 
-    fun formatQty(qty: Double, unit: String): String {
+    fun formatQty(qty: Double, unit: String = ""): String {
         val clean = if (qty % 1.0 == 0.0) qty.toLong().toString() else String.format(Locale.US, "%.1f", qty)
-        return "$clean $unit"
+        return if (unit.isBlank()) clean else "$clean $unit"
     }
 
-    fun formatDate(timestampMillis: Long): String {
-        val sdf = SimpleDateFormat("yyyy/MM/dd", Locale.US)
-        return sdf.format(Date(timestampMillis))
+    fun formatDate(timestampMillis: Long, includeMonthName: Boolean = false): String {
+        return JalaliCalendar.formatJalali(timestampMillis, includeMonthName)
     }
 
     fun daysUntil(expiryMillis: Long, nowMillis: Long = System.currentTimeMillis()): Long {
