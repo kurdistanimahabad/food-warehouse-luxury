@@ -18,7 +18,15 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-
+// اضافه کردن تنظیمات امضای ثابت
+    signingConfigs {
+        create("release") {
+            storeFile = file("warehouse-key.jks")
+            storePassword = "LuxuryPassword123"
+            keyAlias = "warehouse_alias"
+            keyPassword = "LuxuryPassword123"
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
