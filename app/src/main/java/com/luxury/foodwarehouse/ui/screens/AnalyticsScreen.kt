@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.luxury.foodwarehouse.data.CategoryEntity
 import com.luxury.foodwarehouse.data.FoodItemEntity
 import com.luxury.foodwarehouse.data.StockMovementEntity
 import com.luxury.foodwarehouse.model.Formatters
@@ -22,6 +23,7 @@ import com.luxury.foodwarehouse.model.MovementType
 import com.luxury.foodwarehouse.ui.components.CategoryValueDonutChart
 import com.luxury.foodwarehouse.ui.components.ExpiryStatusBarChart
 import com.luxury.foodwarehouse.ui.components.LuxuryCard
+import com.luxury.foodwarehouse.ui.components.SalesOutboundChart
 import com.luxury.foodwarehouse.ui.theme.ChampagneGold
 import com.luxury.foodwarehouse.ui.theme.CrimsonDanger
 import com.luxury.foodwarehouse.ui.theme.EmeraldHealthy
@@ -31,16 +33,28 @@ import com.luxury.foodwarehouse.ui.theme.TextSecondaryLuxury
 @Composable
 fun AnalyticsScreen(
     items: List<FoodItemEntity>,
+    categories: List<CategoryEntity>,
     movements: List<StockMovementEntity>,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 84.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            CategoryValueDonutChart(items = items)
+            SalesOutboundChart(
+                items = items,
+                categories = categories,
+                movements = movements
+            )
+        }
+
+        item {
+            CategoryValueDonutChart(
+                items = items,
+                categories = categories
+            )
         }
 
         item {
@@ -49,7 +63,7 @@ fun AnalyticsScreen(
 
         item {
             Text(
-                text = "گردش اخیر انبار (ورود، خروج و ضایعات)",
+                text = "گردش اخیر انبار (شمسی)",
                 color = TextPrimaryLuxury,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
