@@ -6,17 +6,9 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
-import com.luxury.foodwarehouse.model.FoodCategory
 import com.luxury.foodwarehouse.model.MovementType
 
 class Converters {
-    @TypeConverter
-    fun fromCategory(value: FoodCategory): String = value.name
-
-    @TypeConverter
-    fun toCategory(value: String): FoodCategory =
-        runCatching { FoodCategory.valueOf(value) }.getOrDefault(FoodCategory.OTHER)
-
     @TypeConverter
     fun fromMovementType(value: MovementType): String = value.name
 
@@ -26,8 +18,8 @@ class Converters {
 }
 
 @Database(
-    entities = [FoodItemEntity::class, StockMovementEntity::class],
-    version = 1,
+    entities = [FoodItemEntity::class, StockMovementEntity::class, CategoryEntity::class],
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -44,7 +36,7 @@ abstract class WarehouseDatabase : RoomDatabase() {
                     context.applicationContext,
                     WarehouseDatabase::class.java,
                     "food_warehouse_luxury.db"
-                ).build()
+                ).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
             }
