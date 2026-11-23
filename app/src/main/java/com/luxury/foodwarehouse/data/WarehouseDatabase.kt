@@ -19,7 +19,7 @@ class Converters {
 
 @Database(
     entities = [FoodItemEntity::class, StockMovementEntity::class, CategoryEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
