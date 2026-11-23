@@ -1,5 +1,6 @@
 package com.luxury.foodwarehouse.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -28,6 +30,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,30 +41,40 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.luxury.foodwarehouse.data.CategoryEntity
 import com.luxury.foodwarehouse.data.FoodItemEntity
-import com.luxury.foodwarehouse.model.FoodCategory
+import com.luxury.foodwarehouse.model.Formatters
 import com.luxury.foodwarehouse.ui.theme.ChampagneGold
 import com.luxury.foodwarehouse.ui.theme.LuxurySurfaceElevated
 import com.luxury.foodwarehouse.ui.theme.ObsidianBackground
 import com.luxury.foodwarehouse.ui.theme.TextSecondaryLuxury
-import java.text.SimpleDateFormat
-import java.util.Locale
 import java.util.concurrent.TimeUnit
+
+private enum class ActiveDateTarget {
+    PRODUCTION, EXPIRY
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditItemDialog(
     initialItem: FoodItemEntity?,
+    categories: List<CategoryEntity>,
     onDismiss: () -> Unit,
     onSave: (FoodItemEntity, Boolean) -> Unit
 ) {
-    val sdf = remember { SimpleDateFormat("yyyy/MM/dd", Locale.US) }
     val now = remember { System.currentTimeMillis() }
 
     var name by remember { mutableStateOf(initialItem?.name ?: "") }
     var batchNumber by remember { mutableStateOf(initialItem?.batchNumber ?: "") }
     var barcode by remember { mutableStateOf(initialItem?.barcode ?: "") }
-    var category by remember { mutableStateOf(initialItem?.category ?: FoodCategory.DAIRY) }
+
+    val fallbackCategory = categories.firstOrNull()
+    var selectedCategory by remember {
+        mutableStateOf(
+            categories.firstOrNull { it.id == initialItem?.categoryId } ?: fallbackCategory
+        )
+    }
+
     var unit by remember { mutableStateOf(initialItem?.unit ?: "کارتن") }
     var quantityText by remember { mutableStateOf(initialItem?.quantity?.toString() ?: "10") }
     var minStockText by remember { mutableStateOf(initialItem?.minStockAlert?.toString() ?: "5") }
@@ -70,17 +83,16 @@ fun AddEditItemDialog(
     var storageLocation by remember { mutableStateOf(initialItem?.storageLocation ?: "انبار مرکزی") }
     var supplierName by remember { mutableStateOf(initialItem?.supplierName ?: "") }
 
-    var prodDateText by remember {
-        mutableStateOf(sdf.format(initialItem?.productionDateMillis ?: now))
+    var prodDateMillis by remember {
+        mutableLongStateOf(initialItem?.productionDateMillis ?: now)
     }
-    var expDateText by remember {
-        mutableStateOf(
-            sdf.format(initialItem?.expiryDateMillis ?: (now + TimeUnit.DAYS.toMillis(90)))
-        )
+    var expDateMillis by remember {
+        mutableLongStateOf(initialItem?.expiryDateMillis ?: (now + TimeUnit.DAYS.toMillis(90)))
     }
 
     var expandedCategory by remember { mutableStateOf(false) }
     var showScanner by remember { mutableStateOf(false) }
+    var datePickerTarget by remember { mutableStateOf<ActiveDateTarget?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     if (showScanner) {
@@ -90,6 +102,19 @@ fun AddEditItemDialog(
                 showScanner = false
             },
             onDismiss = { showScanner = false }
+        )
+    }
+
+    if (datePickerTarget != null) {
+        val isExpiry = datePickerTarget == ActiveDateTarget.EXPIRY
+        JalaliDatePickerDialog(
+            title = if (isExpiry) "انتخاب تاریخ انقضا (شمسی)" else "انتخاب تاریخ تولید (شمسی)",
+            initialMillis = if (isExpiry) expDateMillis else prodDateMillis,
+            onDismiss = { datePickerTarget = null },
+            onDateSelected = { chosenMillis ->
+                if (isExpiry) expDateMillis = chosenMillis else prodDateMillis = chosenMillis
+                datePickerTarget = null
+            }
         )
     }
 
@@ -125,7 +150,7 @@ fun AddEditItemDialog(
                     onExpandedChange = { expandedCategory = it }
                 ) {
                     OutlinedTextField(
-                        value = category.titleFa,
+                        value = selectedCategory?.name ?: "سایر اقلام",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("دسته‌بندی") },
@@ -138,11 +163,11 @@ fun AddEditItemDialog(
                         expanded = expandedCategory,
                         onDismissRequest = { expandedCategory = false }
                     ) {
-                        FoodCategory.entries.forEach { cat ->
+                        categories.forEach { cat ->
                             DropdownMenuItem(
-                                text = { Text(cat.titleFa) },
+                                text = { Text(cat.name) },
                                 onClick = {
-                                    category = cat
+                                    selectedCategory = cat
                                     expandedCategory = false
                                 }
                             )
@@ -187,20 +212,35 @@ fun AddEditItemDialog(
                     )
                 }
 
+                // انتخابگر تاریخ تولید و انقضا شمسی
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
-                        value = prodDateText,
-                        onValueChange = { prodDateText = it },
-                        label = { Text("تولید (YYYY/MM/DD)") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
+                        value = Formatters.formatDate(prodDateMillis),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("تولید (شمسی)") },
+                        trailingIcon = {
+                            IconButton(onClick = { datePickerTarget = ActiveDateTarget.PRODUCTION }) {
+                                Icon(Icons.Rounded.CalendarMonth, contentDescription = "تاریخ تولید", tint = ChampagneGold)
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { datePickerTarget = ActiveDateTarget.PRODUCTION }
                     )
                     OutlinedTextField(
-                        value = expDateText,
-                        onValueChange = { expDateText = it },
-                        label = { Text("انقضا (YYYY/MM/DD)") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
+                        value = Formatters.formatDate(expDateMillis),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("انقضا (شمسی)") },
+                        trailingIcon = {
+                            IconButton(onClick = { datePickerTarget = ActiveDateTarget.EXPIRY }) {
+                                Icon(Icons.Rounded.CalendarMonth, contentDescription = "تاریخ انقضا", tint = ChampagneGold)
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { datePickerTarget = ActiveDateTarget.EXPIRY }
                     )
                 }
 
@@ -282,30 +322,27 @@ fun AddEditItemDialog(
                             val buy = purchasePriceText.toLongOrNull()
                             val sell = salePriceText.toLongOrNull()
                             val minS = minStockText.toDoubleOrNull() ?: 5.0
-                            val prodMillis = runCatching { sdf.parse(prodDateText)?.time }.getOrNull() ?: now
-                            val expMillis = runCatching { sdf.parse(expDateText)?.time }.getOrNull()
 
                             when {
                                 name.isBlank() -> errorMessage = "نام محصول را وارد کنید."
                                 qty == null || qty < 0 -> errorMessage = "مقدار موجودی معتبر نیست."
                                 buy == null || buy < 0 -> errorMessage = "قیمت خرید معتبر نیست."
                                 sell == null || sell < 0 -> errorMessage = "قیمت فروش معتبر نیست."
-                                expMillis == null -> errorMessage = "فرمت تاریخ انقضا باید YYYY/MM/DD باشد."
                                 else -> {
                                     val entity = FoodItemEntity(
                                         id = initialItem?.id ?: 0L,
                                         name = name.trim(),
                                         barcode = barcode.trim(),
                                         batchNumber = batchNumber.trim(),
-                                        category = category,
+                                        categoryId = selectedCategory?.id ?: 1L,
                                         unit = unit.trim().ifBlank { "کارتن" },
                                         quantity = qty,
                                         minStockAlert = minS,
                                         purchasePrice = buy,
                                         salePrice = sell,
                                         storageLocation = storageLocation.trim().ifBlank { "انبار مرکزی" },
-                                        productionDateMillis = prodMillis,
-                                        expiryDateMillis = expMillis,
+                                        productionDateMillis = prodDateMillis,
+                                        expiryDateMillis = expDateMillis,
                                         supplierName = supplierName.trim()
                                     )
                                     onSave(entity, initialItem == null)
