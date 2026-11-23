@@ -32,8 +32,11 @@ class WarehouseReportExporter(private val context: Context) {
             "محل نگهداری",
             "موجودی",
             "واحد",
-            "قیمت خرید",
-            "قیمت فروش",
+            "تعداد در کارتن",
+            "قیمت خرید هر دونه",
+            "قیمت فروش هر دونه",
+            "قیمت خرید هر کارتن",
+            "قیمت فروش هر کارتن",
             "ارزش کل خرید",
             "ارزش کل فروش",
             "تاریخ تولید (شمسی)",
@@ -53,8 +56,11 @@ class WarehouseReportExporter(private val context: Context) {
                 item.storageLocation,
                 item.quantity.toString(),
                 item.unit,
+                item.unitsPerCarton.toString(),
                 item.purchasePrice.toString(),
                 item.salePrice.toString(),
+                item.cartonPurchasePrice.toString(),
+                item.cartonSalePrice.toString(),
                 item.totalPurchaseValue.toString(),
                 item.totalSaleValue.toString(),
                 Formatters.formatDate(item.productionDateMillis),
@@ -103,6 +109,7 @@ class WarehouseReportExporter(private val context: Context) {
                     put("batchNumber", item.batchNumber)
                     put("categoryId", item.categoryId)
                     put("unit", item.unit)
+                    put("unitsPerCarton", item.unitsPerCarton)
                     put("quantity", item.quantity)
                     put("minStockAlert", item.minStockAlert)
                     put("purchasePrice", item.purchasePrice)
