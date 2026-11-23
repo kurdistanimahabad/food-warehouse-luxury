@@ -45,8 +45,11 @@ import com.luxury.foodwarehouse.data.CategoryEntity
 import com.luxury.foodwarehouse.data.FoodItemEntity
 import com.luxury.foodwarehouse.model.Formatters
 import com.luxury.foodwarehouse.ui.theme.ChampagneGold
+import com.luxury.foodwarehouse.ui.theme.LuxurySurface
 import com.luxury.foodwarehouse.ui.theme.LuxurySurfaceElevated
 import com.luxury.foodwarehouse.ui.theme.ObsidianBackground
+import com.luxury.foodwarehouse.ui.theme.SoftGold
+import com.luxury.foodwarehouse.ui.theme.TextPrimaryLuxury
 import com.luxury.foodwarehouse.ui.theme.TextSecondaryLuxury
 import java.util.concurrent.TimeUnit
 
@@ -76,10 +79,11 @@ fun AddEditItemDialog(
     }
 
     var unit by remember { mutableStateOf(initialItem?.unit ?: "کارتن") }
-    var quantityText by remember { mutableStateOf(initialItem?.quantity?.toString() ?: "10") }
+    var unitsPerCartonText by remember { mutableStateOf((initialItem?.unitsPerCarton ?: 12).toString()) }
+    var quantityText by remember { mutableStateOf(initialItem?.quantity?.toString() ?: "1") }
     var minStockText by remember { mutableStateOf(initialItem?.minStockAlert?.toString() ?: "5") }
-    var purchasePriceText by remember { mutableStateOf(initialItem?.purchasePrice?.toString() ?: "1000000") }
-    var salePriceText by remember { mutableStateOf(initialItem?.salePrice?.toString() ?: "1250000") }
+    var purchasePriceText by remember { mutableStateOf(initialItem?.purchasePrice?.toString() ?: "100000") }
+    var salePriceText by remember { mutableStateOf(initialItem?.salePrice?.toString() ?: "125000") }
     var storageLocation by remember { mutableStateOf(initialItem?.storageLocation ?: "انبار مرکزی") }
     var supplierName by remember { mutableStateOf(initialItem?.supplierName ?: "") }
 
@@ -94,6 +98,12 @@ fun AddEditItemDialog(
     var showScanner by remember { mutableStateOf(false) }
     var datePickerTarget by remember { mutableStateOf<ActiveDateTarget?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val parsedUnitsPerCarton = unitsPerCartonText.toIntOrNull()?.coerceAtLeast(1) ?: 1
+    val parsedUnitBuy = purchasePriceText.toLongOrNull() ?: 0L
+    val parsedUnitSell = salePriceText.toLongOrNull() ?: 0L
+    val calculatedCartonBuy = parsedUnitBuy * parsedUnitsPerCarton
+    val calculatedCartonSell = parsedUnitSell * parsedUnitsPerCarton
 
     if (showScanner) {
         BarcodeScannerDialog(
@@ -193,11 +203,20 @@ fun AddEditItemDialog(
                     )
                 }
 
+                OutlinedTextField(
+                    value = unitsPerCartonText,
+                    onValueChange = { unitsPerCartonText = it },
+                    label = { Text("تعداد در کارتن (مثلاً ۱۲ یا ۲۴)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = purchasePriceText,
                         onValueChange = { purchasePriceText = it },
-                        label = { Text("قیمت خرید *") },
+                        label = { Text("قیمت خرید هر دونه *") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.weight(1f)
@@ -205,14 +224,41 @@ fun AddEditItemDialog(
                     OutlinedTextField(
                         value = salePriceText,
                         onValueChange = { salePriceText = it },
-                        label = { Text("قیمت فروش *") },
+                        label = { Text("قیمت فروش هر دونه *") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.weight(1f)
                     )
                 }
 
-                // انتخابگر تاریخ تولید و انقضا شمسی
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = LuxurySurface,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "محاسبه خودکار قیمت کارتن ($parsedUnitsPerCarton عدد در کارتن):",
+                            color = SoftGold,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "قیمت خرید هر کارتن: ${Formatters.formatCurrency(calculatedCartonBuy)}",
+                            color = TextPrimaryLuxury,
+                            fontSize = 12.sp
+                        )
+                        Text(
+                            text = "قیمت فروش هر کارتن: ${Formatters.formatCurrency(calculatedCartonSell)}",
+                            color = TextPrimaryLuxury,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = Formatters.formatDate(prodDateMillis),
@@ -322,12 +368,14 @@ fun AddEditItemDialog(
                             val buy = purchasePriceText.toLongOrNull()
                             val sell = salePriceText.toLongOrNull()
                             val minS = minStockText.toDoubleOrNull() ?: 5.0
+                            val perCarton = unitsPerCartonText.toIntOrNull()
 
                             when {
                                 name.isBlank() -> errorMessage = "نام محصول را وارد کنید."
                                 qty == null || qty < 0 -> errorMessage = "مقدار موجودی معتبر نیست."
-                                buy == null || buy < 0 -> errorMessage = "قیمت خرید معتبر نیست."
-                                sell == null || sell < 0 -> errorMessage = "قیمت فروش معتبر نیست."
+                                perCarton == null || perCarton <= 0 -> errorMessage = "تعداد در کارتن باید حداقل ۱ باشد."
+                                buy == null || buy < 0 -> errorMessage = "قیمت خرید هر دونه معتبر نیست."
+                                sell == null || sell < 0 -> errorMessage = "قیمت فروش هر دونه معتبر نیست."
                                 else -> {
                                     val entity = FoodItemEntity(
                                         id = initialItem?.id ?: 0L,
@@ -336,6 +384,7 @@ fun AddEditItemDialog(
                                         batchNumber = batchNumber.trim(),
                                         categoryId = selectedCategory?.id ?: 1L,
                                         unit = unit.trim().ifBlank { "کارتن" },
+                                        unitsPerCarton = perCarton,
                                         quantity = qty,
                                         minStockAlert = minS,
                                         purchasePrice = buy,
