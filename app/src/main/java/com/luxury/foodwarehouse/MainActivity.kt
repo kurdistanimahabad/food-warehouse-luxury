@@ -38,6 +38,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.luxury.foodwarehouse.data.FoodItemEntity
 import com.luxury.foodwarehouse.ui.components.AddEditItemDialog
+import com.luxury.foodwarehouse.ui.components.BulkMovementDialog
+import com.luxury.foodwarehouse.ui.components.CategoryManagementDialog
 import com.luxury.foodwarehouse.ui.screens.AnalyticsScreen
 import com.luxury.foodwarehouse.ui.screens.DashboardScreen
 import com.luxury.foodwarehouse.ui.screens.InventoryScreen
@@ -76,12 +78,15 @@ private fun FoodWarehouseApp(vm: WarehouseViewModel = viewModel()) {
     var currentTab by remember { mutableIntStateOf(0) }
     var showAddDialog by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<FoodItemEntity?>(null) }
+    var showCategoryManager by remember { mutableStateOf(false) }
+    var showBulkMovement by remember { mutableStateOf(false) }
 
     val summary by vm.summary.collectAsStateWithLifecycle()
+    val categories by vm.categories.collectAsStateWithLifecycle()
     val allItems by vm.allItems.collectAsStateWithLifecycle()
     val filteredItems by vm.filteredItems.collectAsStateWithLifecycle()
     val movements by vm.movements.collectAsStateWithLifecycle()
-    val selectedCategory by vm.selectedCategory.collectAsStateWithLifecycle()
+    val selectedCategoryId by vm.selectedCategoryId.collectAsStateWithLifecycle()
     val selectedFilter by vm.selectedFilter.collectAsStateWithLifecycle()
     val searchQuery by vm.searchQuery.collectAsStateWithLifecycle()
     val updateState by vm.updateState.collectAsStateWithLifecycle()
@@ -144,6 +149,11 @@ private fun FoodWarehouseApp(vm: WarehouseViewModel = viewModel()) {
             AppTab.DASHBOARD -> DashboardScreen(
                 summary = summary,
                 items = allItems,
+                categories = categories,
+                onSelectFilterAndOpenInventory = { filter ->
+                    vm.setFilter(filter)
+                    currentTab = AppTab.INVENTORY.ordinal
+                },
                 onExportCsv = vm::exportCsvReport,
                 onShareSummary = vm::shareTextSummary,
                 onExportBackup = vm::exportJsonBackup,
@@ -152,12 +162,15 @@ private fun FoodWarehouseApp(vm: WarehouseViewModel = viewModel()) {
 
             AppTab.INVENTORY -> InventoryScreen(
                 items = filteredItems,
-                selectedCategory = selectedCategory,
+                categories = categories,
+                selectedCategoryId = selectedCategoryId,
                 selectedFilter = selectedFilter,
                 searchQuery = searchQuery,
                 onSearchQueryChange = vm::setSearchQuery,
-                onCategorySelect = vm::setCategory,
+                onCategorySelect = vm::setCategoryId,
                 onFilterSelect = vm::setFilter,
+                onOpenCategoryManager = { showCategoryManager = true },
+                onOpenBulkMovement = { showBulkMovement = true },
                 onEditItem = { item ->
                     editingItem = item
                     showAddDialog = true
@@ -171,6 +184,7 @@ private fun FoodWarehouseApp(vm: WarehouseViewModel = viewModel()) {
 
             AppTab.ANALYTICS -> AnalyticsScreen(
                 items = allItems,
+                categories = categories,
                 movements = movements,
                 modifier = mod
             )
@@ -187,6 +201,7 @@ private fun FoodWarehouseApp(vm: WarehouseViewModel = viewModel()) {
         if (showAddDialog) {
             AddEditItemDialog(
                 initialItem = editingItem,
+                categories = categories,
                 onDismiss = {
                     showAddDialog = false
                     editingItem = null
@@ -195,6 +210,26 @@ private fun FoodWarehouseApp(vm: WarehouseViewModel = viewModel()) {
                     vm.addOrUpdateItem(item, isNew)
                     showAddDialog = false
                     editingItem = null
+                }
+            )
+        }
+
+        if (showCategoryManager) {
+            CategoryManagementDialog(
+                categories = categories,
+                onAddCategory = vm::addCategory,
+                onRenameCategory = vm::renameCategory,
+                onDeleteCategory = vm::deleteCategory,
+                onDismiss = { showCategoryManager = false }
+            )
+        }
+
+        if (showBulkMovement) {
+            BulkMovementDialog(
+                items = allItems,
+                onDismiss = { showBulkMovement = false },
+                onApplyBulk = { entries, type, note ->
+                    vm.applyBulkMovements(entries, type, note)
                 }
             )
         }
