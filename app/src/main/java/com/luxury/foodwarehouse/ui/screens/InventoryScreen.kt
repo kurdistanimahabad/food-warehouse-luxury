@@ -233,7 +233,12 @@ fun InventoryScreen(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = "خرید: ${Formatters.formatCurrency(item.purchasePrice)} | فروش: ${Formatters.formatCurrency(item.salePrice)}",
+                            text = "تعداد در کارتن: ${item.unitsPerCarton} عدد • خرید کارتن: ${Formatters.formatCurrency(item.cartonPurchasePrice)} | فروش کارتن: ${Formatters.formatCurrency(item.cartonSalePrice)}",
+                            color = SoftGold,
+                            fontSize = 11.sp
+                        )
+                        Text(
+                            text = "دونه خرید: ${Formatters.formatCurrency(item.purchasePrice)} | دونه فروش: ${Formatters.formatCurrency(item.salePrice)}",
                             color = TextSecondaryLuxury,
                             fontSize = 12.sp
                         )
