@@ -254,7 +254,7 @@ class WarehouseViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun exportCsvReport() {
-        exporter.exportCsvAndShare(allItems.value)
+        exporter.exportCsvAndShare(allItems.value, categories.value)
     }
 
     fun shareTextSummary() {
