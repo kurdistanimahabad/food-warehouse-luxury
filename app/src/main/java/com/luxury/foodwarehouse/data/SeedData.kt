@@ -1,9 +1,19 @@
 package com.luxury.foodwarehouse.data
 
-import com.luxury.foodwarehouse.model.FoodCategory
+import com.luxury.foodwarehouse.model.MovementType
 import java.util.concurrent.TimeUnit
 
 object SeedData {
+
+    fun defaultCategories(): List<CategoryEntity> = listOf(
+        CategoryEntity(id = 1L, name = "لبنیات و سردخانه", colorIndex = 0, isDefault = true),
+        CategoryEntity(id = 2L, name = "خشکبار و حبوبات", colorIndex = 1, isDefault = true),
+        CategoryEntity(id = 3L, name = "نوشیدنی", colorIndex = 2, isDefault = true),
+        CategoryEntity(id = 4L, name = "کنسرو و روغن", colorIndex = 3, isDefault = true),
+        CategoryEntity(id = 5L, name = "پروتئینی", colorIndex = 4, isDefault = true),
+        CategoryEntity(id = 6L, name = "سایر اقلام", colorIndex = 5, isDefault = true)
+    )
+
     fun sampleItems(now: Long = System.currentTimeMillis()): List<FoodItemEntity> {
         val day = TimeUnit.DAYS.toMillis(1)
         return listOf(
@@ -11,7 +21,7 @@ object SeedData {
                 name = "کره حیوانی پاستوریزه ۱۰۰ گرمی",
                 barcode = "6260111001",
                 batchNumber = "B-409A",
-                category = FoodCategory.DAIRY,
+                categoryId = 1L,
                 unit = "کارتن",
                 quantity = 24.0,
                 minStockAlert = 8.0,
@@ -26,7 +36,7 @@ object SeedData {
                 name = "روغن سرخ‌کردنی ویژه ۵ لیتری",
                 barcode = "6260222004",
                 batchNumber = "OIL-882",
-                category = FoodCategory.CANNED_OIL,
+                categoryId = 4L,
                 unit = "حلب",
                 quantity = 45.0,
                 minStockAlert = 10.0,
@@ -41,7 +51,7 @@ object SeedData {
                 name = "برنج طارم هاشمی درجه یک ۱۰ کیلویی",
                 barcode = "6260333009",
                 batchNumber = "RICE-102",
-                category = FoodCategory.DRY_GOODS,
+                categoryId = 2L,
                 unit = "کیسه",
                 quantity = 38.0,
                 minStockAlert = 12.0,
@@ -56,7 +66,7 @@ object SeedData {
                 name = "آبمیوه طبیعی پرتقال ۱ لیتری",
                 barcode = "6260444012",
                 batchNumber = "J-771",
-                category = FoodCategory.BEVERAGES,
+                categoryId = 3L,
                 unit = "شیرینگ",
                 quantity = 4.0,
                 minStockAlert = 10.0,
@@ -71,7 +81,7 @@ object SeedData {
                 name = "کنسرو ماهی تن در روغن زیتون",
                 barcode = "6260555019",
                 batchNumber = "TN-305",
-                category = FoodCategory.CANNED_OIL,
+                categoryId = 4L,
                 unit = "کارتن",
                 quantity = 6.0,
                 minStockAlert = 5.0,
@@ -86,7 +96,7 @@ object SeedData {
                 name = "فیله مرغ منجمد بسته‌بندی",
                 barcode = "6260666025",
                 batchNumber = "CH-910",
-                category = FoodCategory.PROTEIN,
+                categoryId = 5L,
                 unit = "کارتن",
                 quantity = 30.0,
                 minStockAlert = 10.0,
@@ -96,6 +106,42 @@ object SeedData {
                 productionDateMillis = now - 12 * day,
                 expiryDateMillis = now + 11 * day,
                 supplierName = "پروتئین سپید"
+            )
+        )
+    }
+
+    fun sampleMovements(now: Long = System.currentTimeMillis()): List<StockMovementEntity> {
+        val day = TimeUnit.DAYS.toMillis(1)
+        return listOf(
+            StockMovementEntity(
+                itemId = 1L,
+                itemName = "کره حیوانی پاستوریزه ۱۰۰ گرمی",
+                movementType = MovementType.OUTBOUND,
+                quantity = 8.0,
+                unitPrice = 2_250_000L,
+                totalAmount = 18_000_000L,
+                note = "فروش عمده سوپرمارکت",
+                timestampMillis = now - 2 * day
+            ),
+            StockMovementEntity(
+                itemId = 2L,
+                itemName = "روغن سرخ‌کردنی ویژه ۵ لیتری",
+                movementType = MovementType.OUTBOUND,
+                quantity = 12.0,
+                unitPrice = 1_690_000L,
+                totalAmount = 20_280_000L,
+                note = "فروش رستورانی",
+                timestampMillis = now - 1 * day
+            ),
+            StockMovementEntity(
+                itemId = 3L,
+                itemName = "برنج طارم هاشمی درجه یک ۱۰ کیلویی",
+                movementType = MovementType.OUTBOUND,
+                quantity = 5.0,
+                unitPrice = 4_250_000L,
+                totalAmount = 21_250_000L,
+                note = "پخش عمده",
+                timestampMillis = now - 6 * 3600_000L
             )
         )
     }
