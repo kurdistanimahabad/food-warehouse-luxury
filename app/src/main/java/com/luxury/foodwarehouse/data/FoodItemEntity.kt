@@ -2,7 +2,6 @@ package com.luxury.foodwarehouse.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.luxury.foodwarehouse.model.FoodCategory
 
 @Entity(tableName = "food_items")
 data class FoodItemEntity(
@@ -11,7 +10,7 @@ data class FoodItemEntity(
     val name: String,
     val barcode: String = "",
     val batchNumber: String = "",
-    val category: FoodCategory,
+    val categoryId: Long = 1L,
     val unit: String = "کارتن",
     val quantity: Double,
     val minStockAlert: Double = 5.0,
